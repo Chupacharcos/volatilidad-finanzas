@@ -39,11 +39,24 @@ def _load_model():
 # ── Generación de datos sintéticos ───────────────────────────────────────────
 
 TICKERS_META = {
-    "IBEX35": {"nombre": "IBEX 35",    "sector": "Índice",  "precio_base": 10_800.0, "vol_base": 0.012, "color": "#64ffda"},
-    "SAN":    {"nombre": "Santander",  "sector": "Banca",   "precio_base": 4.20,     "vol_base": 0.018, "color": "#38bdf8"},
-    "ITX":    {"nombre": "Inditex",    "sector": "Retail",  "precio_base": 48.50,    "vol_base": 0.014, "color": "#a78bfa"},
-    "BBVA":   {"nombre": "BBVA",       "sector": "Banca",   "precio_base": 9.80,     "vol_base": 0.017, "color": "#fb923c"},
-    "TEF":    {"nombre": "Telefónica", "sector": "Telecom", "precio_base": 4.10,     "vol_base": 0.016, "color": "#f472b6"},
+    # ── Renta variable española ─────────────────────────────────────────────
+    "IBEX35": {"nombre": "IBEX 35",         "sector": "Índice",    "clase": "Bolsa",  "precio_base": 10_800.0, "vol_base": 0.012, "color": "#64ffda", "continuo": False},
+    "SAN":    {"nombre": "Santander",        "sector": "Banca",     "clase": "Bolsa",  "precio_base": 4.20,     "vol_base": 0.018, "color": "#38bdf8", "continuo": False},
+    "ITX":    {"nombre": "Inditex",          "sector": "Retail",    "clase": "Bolsa",  "precio_base": 48.50,    "vol_base": 0.014, "color": "#a78bfa", "continuo": False},
+    "BBVA":   {"nombre": "BBVA",             "sector": "Banca",     "clase": "Bolsa",  "precio_base": 9.80,     "vol_base": 0.017, "color": "#fb923c", "continuo": False},
+    "TEF":    {"nombre": "Telefónica",       "sector": "Telecom",   "clase": "Bolsa",  "precio_base": 4.10,     "vol_base": 0.016, "color": "#f472b6", "continuo": False},
+    # ── Criptomonedas ──────────────────────────────────────────────────────
+    "BTC":    {"nombre": "Bitcoin",          "sector": "Crypto",    "clase": "Crypto", "precio_base": 85_000.0, "vol_base": 0.038, "color": "#f7931a", "continuo": True},
+    "ETH":    {"nombre": "Ethereum",         "sector": "Crypto",    "clase": "Crypto", "precio_base": 3_200.0,  "vol_base": 0.048, "color": "#627eea", "continuo": True},
+    "BNB":    {"nombre": "BNB",              "sector": "Crypto",    "clase": "Crypto", "precio_base": 580.0,    "vol_base": 0.052, "color": "#f3ba2f", "continuo": True},
+    "SOL":    {"nombre": "Solana",           "sector": "Crypto",    "clase": "Crypto", "precio_base": 175.0,    "vol_base": 0.068, "color": "#9945ff", "continuo": True},
+    "XRP":    {"nombre": "XRP",              "sector": "Crypto",    "clase": "Crypto", "precio_base": 0.58,     "vol_base": 0.062, "color": "#346aa9", "continuo": True},
+    # ── NFT / DeFi / Altcoins ──────────────────────────────────────────────
+    "MANA":   {"nombre": "Decentraland",     "sector": "NFT/DeFi",  "clase": "NFT/DeFi","precio_base": 0.48,   "vol_base": 0.095, "color": "#ff2d55", "continuo": True},
+    "SAND":   {"nombre": "The Sandbox",      "sector": "NFT/DeFi",  "clase": "NFT/DeFi","precio_base": 0.42,   "vol_base": 0.098, "color": "#04adef", "continuo": True},
+    "APE":    {"nombre": "ApeCoin",          "sector": "NFT/DeFi",  "clase": "NFT/DeFi","precio_base": 1.20,   "vol_base": 0.105, "color": "#0063f5", "continuo": True},
+    "UNI":    {"nombre": "Uniswap",          "sector": "NFT/DeFi",  "clase": "NFT/DeFi","precio_base": 8.50,   "vol_base": 0.072, "color": "#ff007a", "continuo": True},
+    "LINK":   {"nombre": "Chainlink",        "sector": "NFT/DeFi",  "clase": "NFT/DeFi","precio_base": 14.80,  "vol_base": 0.078, "color": "#2a5ada", "continuo": True},
 }
 
 
@@ -78,25 +91,26 @@ def _build_features_single(ret, vol, t_start, length):
     return feat
 
 
-def _trading_dates(n, end=None):
-    """Genera n fechas hábiles hacia atrás desde end."""
+def _trading_dates(n, end=None, continuo=False):
+    """Genera n fechas hacia atrás desde end.
+    continuo=True: todos los días (cripto 24/7). False: solo hábiles (bolsa)."""
     if end is None:
         end = datetime.date.today()
     dates, d = [], end
     while len(dates) < n:
-        if d.weekday() < 5:
+        if continuo or d.weekday() < 5:
             dates.append(d)
         d -= datetime.timedelta(days=1)
     return list(reversed(dates))
 
 
-def _forecast_dates(n, start=None):
-    """Genera n fechas hábiles hacia adelante desde start."""
+def _forecast_dates(n, start=None, continuo=False):
+    """Genera n fechas hacia adelante desde start."""
     if start is None:
         start = datetime.date.today()
     dates, d = [], start + datetime.timedelta(days=1)
     while len(dates) < n:
-        if d.weekday() < 5:
+        if continuo or d.weekday() < 5:
             dates.append(d)
         d += datetime.timedelta(days=1)
     return dates
@@ -138,7 +152,8 @@ def _predict_ticker(ticker: str):
     hist_len  = 30
     hist_ret  = ret[t_end - hist_len:t_end]
     hist_vol  = vol[t_end - hist_len:t_end]
-    hist_dates = _trading_dates(hist_len)
+    continuo   = meta.get("continuo", False)
+    hist_dates = _trading_dates(hist_len, continuo=continuo)
 
     # Precio histórico sintético (acumulación de retornos)
     precio = meta["precio_base"]
@@ -164,7 +179,7 @@ def _predict_ticker(ticker: str):
         })
 
     # Predicción 5 días
-    fcast_dates = _forecast_dates(horizon)
+    fcast_dates = _forecast_dates(horizon, continuo=continuo)
     # Proyección de precio (último precio × (1 + retorno esperado=0))
     ultimo_precio = float(precios[-1])
     prediccion = []
@@ -188,7 +203,9 @@ def _predict_ticker(ticker: str):
         "ticker":         ticker,
         "nombre":         meta["nombre"],
         "sector":         meta["sector"],
+        "clase":          meta["clase"],
         "color":          meta["color"],
+        "continuo":       meta.get("continuo", False),
         "historico":      historico,
         "prediccion":     prediccion,
         "nivel_riesgo":   nivel_riesgo,
@@ -244,6 +261,40 @@ _NOTICIAS = {
         ("Alta competencia en precios presiona los márgenes de {n}",                    -0.55),
         ("{n} lidera el despliegue de 5G en España con cobertura del {p:.1f}% del territorio", 0.65),
         ("Analistas rebajan recomendación de {n} a 'neutral' tras revisión de previsiones", -0.42),
+    ],
+    "Crypto": [
+        ("{n} supera los ${b:.0f} tras anuncio de ETF spot aprobado por la SEC",        0.92),
+        ("Whales mueven {b:.0f}M$ en {n}: mercado anticipa movimiento brusco",          -0.30),
+        ("{n} cae un {p:.1f}% tras liquidaciones masivas en derivados",                 -0.82),
+        ("Adopción institucional: fondo soberano de Noruega añade {n} a su cartera",    0.88),
+        ("Halving de {n}: histórico catalizador alcista en el corto-medio plazo",       0.78),
+        ("Regulador de EE.UU. impone multa millonaria a exchange: {n} entre los afectados", -0.65),
+        ("{n} marca máximos históricos con volumen récord en las últimas 24h",          0.95),
+        ("Hack a protocolo DeFi drena liquidez: {n} cae un {p:.1f}% en horas",         -0.88),
+        ("BlackRock aumenta su posición en {n} en {b:.0f}M$",                          0.82),
+        ("Nodo de {n} experimenta congestión: fees suben un {p:.1f}%",                 -0.38),
+        ("China relaja restricciones sobre {n}: entrada de capital asiático esperada",  0.70),
+        ("Fed mantiene tipos altos: activos de riesgo como {n} bajo presión",          -0.58),
+        ("{n} integrado como medio de pago en plataforma con {b:.0f}M de usuarios",    0.75),
+        ("Ballenatos acumulan {n} en silencio: on-chain data muestra compras masivas", 0.60),
+        ("Liquidaciones en {p:.1f}M$ de posiciones largas en {n} en 1 hora",          -0.72),
+    ],
+    "NFT/DeFi": [
+        ("Volumen de NFTs en {n} supera los {b:.0f}M$ en la última semana",            0.80),
+        ("{n} sufre exploit en su contrato inteligente: {b:.0f}M$ comprometidos",      -0.95),
+        ("Metaverso de {n} atrae a {b:.0f} usuarios activos en evento especial",       0.72),
+        ("Liquidity mining en {n}: APY del {p:.1f}% atrae nuevo capital",              0.65),
+        ("{n} pierde un {p:.1f}% tras caída de volumen en mercados NFT",               -0.70),
+        ("Colección blue-chip en {n} se vende por {b:.0f}ETH, impulsando el token",   0.85),
+        ("DAO de {n} vota para quemar el {p:.1f}% del supply: deflación esperada",     0.68),
+        ("Grandes marcas abandonan proyectos NFT: {n} entre los perjudicados",         -0.75),
+        ("{n} lanza V2 con mejoras en liquidez concentrada y menor slippage",           0.70),
+        ("Reguladores de la UE clasifican tokens DeFi como valores: {n} en el punto de mira", -0.65),
+        ("Bridge cross-chain de {n} sufre ataque: fondos en riesgo",                   -0.90),
+        ("Inversión de {b:.0f}M$ en {n} liderada por a16z y Paradigm",                0.88),
+        ("Floor price de NFTs en {n} cae un {p:.1f}% en 24h: mercado en corrección",  -0.62),
+        ("{n} integra zkRollup: fees caen un {p:.1f}% y velocidad se multiplica",      0.75),
+        ("Influencer {n} acusado de pump-and-dump: token pierde {p:.1f}% en minutos",  -0.85),
     ],
 }
 
