@@ -39,24 +39,29 @@ def _load_model():
 # ── Generación de datos sintéticos ───────────────────────────────────────────
 
 TICKERS_META = {
+    # ── ETFs globales ───────────────────────────────────────────────────────
+    "SPY":    {"nombre": "S&P 500 ETF",      "sector": "ETF Global", "clase": "ETF",    "precio_base": 580.0,    "vol_base": 0.008, "color": "#4ade80", "continuo": False},
+    "QQQ":    {"nombre": "Nasdaq 100 ETF",   "sector": "ETF Tech",   "clase": "ETF",    "precio_base": 490.0,    "vol_base": 0.011, "color": "#38bdf8", "continuo": False},
+    "TLT":    {"nombre": "Bonos US 20y ETF", "sector": "ETF Bonos",  "clase": "ETF",    "precio_base": 92.0,     "vol_base": 0.007, "color": "#c084fc", "continuo": False},
+    "GLD":    {"nombre": "Gold ETF",         "sector": "ETF Oro",    "clase": "ETF",    "precio_base": 235.0,    "vol_base": 0.009, "color": "#fbbf24", "continuo": False},
     # ── Renta variable española ─────────────────────────────────────────────
-    "IBEX35": {"nombre": "IBEX 35",         "sector": "Índice",    "clase": "Bolsa",  "precio_base": 10_800.0, "vol_base": 0.012, "color": "#64ffda", "continuo": False},
-    "SAN":    {"nombre": "Santander",        "sector": "Banca",     "clase": "Bolsa",  "precio_base": 4.20,     "vol_base": 0.018, "color": "#38bdf8", "continuo": False},
-    "ITX":    {"nombre": "Inditex",          "sector": "Retail",    "clase": "Bolsa",  "precio_base": 48.50,    "vol_base": 0.014, "color": "#a78bfa", "continuo": False},
-    "BBVA":   {"nombre": "BBVA",             "sector": "Banca",     "clase": "Bolsa",  "precio_base": 9.80,     "vol_base": 0.017, "color": "#fb923c", "continuo": False},
-    "TEF":    {"nombre": "Telefónica",       "sector": "Telecom",   "clase": "Bolsa",  "precio_base": 4.10,     "vol_base": 0.016, "color": "#f472b6", "continuo": False},
+    "IBEX35": {"nombre": "IBEX 35",          "sector": "Índice",    "clase": "Bolsa",   "precio_base": 10_800.0, "vol_base": 0.012, "color": "#64ffda", "continuo": False},
+    "SAN":    {"nombre": "Santander",        "sector": "Banca",     "clase": "Bolsa",   "precio_base": 4.20,     "vol_base": 0.018, "color": "#38bdf8", "continuo": False},
+    "ITX":    {"nombre": "Inditex",          "sector": "Retail",    "clase": "Bolsa",   "precio_base": 48.50,    "vol_base": 0.014, "color": "#a78bfa", "continuo": False},
+    "BBVA":   {"nombre": "BBVA",             "sector": "Banca",     "clase": "Bolsa",   "precio_base": 9.80,     "vol_base": 0.017, "color": "#fb923c", "continuo": False},
+    "TEF":    {"nombre": "Telefónica",       "sector": "Telecom",   "clase": "Bolsa",   "precio_base": 4.10,     "vol_base": 0.016, "color": "#f472b6", "continuo": False},
     # ── Criptomonedas ──────────────────────────────────────────────────────
-    "BTC":    {"nombre": "Bitcoin",          "sector": "Crypto",    "clase": "Crypto", "precio_base": 85_000.0, "vol_base": 0.038, "color": "#f7931a", "continuo": True},
-    "ETH":    {"nombre": "Ethereum",         "sector": "Crypto",    "clase": "Crypto", "precio_base": 3_200.0,  "vol_base": 0.048, "color": "#627eea", "continuo": True},
-    "BNB":    {"nombre": "BNB",              "sector": "Crypto",    "clase": "Crypto", "precio_base": 580.0,    "vol_base": 0.052, "color": "#f3ba2f", "continuo": True},
-    "SOL":    {"nombre": "Solana",           "sector": "Crypto",    "clase": "Crypto", "precio_base": 175.0,    "vol_base": 0.068, "color": "#9945ff", "continuo": True},
-    "XRP":    {"nombre": "XRP",              "sector": "Crypto",    "clase": "Crypto", "precio_base": 0.58,     "vol_base": 0.062, "color": "#346aa9", "continuo": True},
+    "BTC":    {"nombre": "Bitcoin",          "sector": "Crypto",    "clase": "Crypto",  "precio_base": 85_000.0, "vol_base": 0.038, "color": "#f7931a", "continuo": True},
+    "ETH":    {"nombre": "Ethereum",         "sector": "Crypto",    "clase": "Crypto",  "precio_base": 3_200.0,  "vol_base": 0.048, "color": "#627eea", "continuo": True},
+    "BNB":    {"nombre": "BNB",              "sector": "Crypto",    "clase": "Crypto",  "precio_base": 580.0,    "vol_base": 0.052, "color": "#f3ba2f", "continuo": True},
+    "SOL":    {"nombre": "Solana",           "sector": "Crypto",    "clase": "Crypto",  "precio_base": 175.0,    "vol_base": 0.068, "color": "#9945ff", "continuo": True},
+    "XRP":    {"nombre": "XRP",              "sector": "Crypto",    "clase": "Crypto",  "precio_base": 0.58,     "vol_base": 0.062, "color": "#346aa9", "continuo": True},
     # ── NFT / DeFi / Altcoins ──────────────────────────────────────────────
-    "MANA":   {"nombre": "Decentraland",     "sector": "NFT/DeFi",  "clase": "NFT/DeFi","precio_base": 0.48,   "vol_base": 0.095, "color": "#ff2d55", "continuo": True},
-    "SAND":   {"nombre": "The Sandbox",      "sector": "NFT/DeFi",  "clase": "NFT/DeFi","precio_base": 0.42,   "vol_base": 0.098, "color": "#04adef", "continuo": True},
-    "APE":    {"nombre": "ApeCoin",          "sector": "NFT/DeFi",  "clase": "NFT/DeFi","precio_base": 1.20,   "vol_base": 0.105, "color": "#0063f5", "continuo": True},
-    "UNI":    {"nombre": "Uniswap",          "sector": "NFT/DeFi",  "clase": "NFT/DeFi","precio_base": 8.50,   "vol_base": 0.072, "color": "#ff007a", "continuo": True},
-    "LINK":   {"nombre": "Chainlink",        "sector": "NFT/DeFi",  "clase": "NFT/DeFi","precio_base": 14.80,  "vol_base": 0.078, "color": "#2a5ada", "continuo": True},
+    "MANA":   {"nombre": "Decentraland",     "sector": "NFT/DeFi",  "clase": "NFT/DeFi","precio_base": 0.48,    "vol_base": 0.095, "color": "#ff2d55", "continuo": True},
+    "SAND":   {"nombre": "The Sandbox",      "sector": "NFT/DeFi",  "clase": "NFT/DeFi","precio_base": 0.42,    "vol_base": 0.098, "color": "#04adef", "continuo": True},
+    "APE":    {"nombre": "ApeCoin",          "sector": "NFT/DeFi",  "clase": "NFT/DeFi","precio_base": 1.20,    "vol_base": 0.105, "color": "#0063f5", "continuo": True},
+    "UNI":    {"nombre": "Uniswap",          "sector": "NFT/DeFi",  "clase": "NFT/DeFi","precio_base": 8.50,    "vol_base": 0.072, "color": "#ff007a", "continuo": True},
+    "LINK":   {"nombre": "Chainlink",        "sector": "NFT/DeFi",  "clase": "NFT/DeFi","precio_base": 14.80,   "vol_base": 0.078, "color": "#2a5ada", "continuo": True},
 }
 
 
@@ -178,40 +183,86 @@ def _predict_ticker(ticker: str):
             "retorno":   round(float(hist_ret[i]) * 100, 3),  # en %
         })
 
-    # Predicción 5 días
-    fcast_dates = _forecast_dates(horizon, continuo=continuo)
-    # Proyección de precio (último precio × (1 + retorno esperado=0))
+    # Predicción 5 días — precio acumulativo con drift direccional
+    fcast_dates   = _forecast_dates(horizon, continuo=continuo)
     ultimo_precio = float(precios[-1])
+
+    # Determinar sesgo direccional (seed reproducible): ligeramente alcista por defecto
+    drift_rng = np.random.default_rng(seed + 777)
+    drift_dir = float(drift_rng.choice([-1, 1], p=[0.40, 0.60]))   # 60% alcista
+    drift_bias = drift_dir * 0.25  # 25% de la vol como drift
+
+    precio_actual = ultimo_precio
     prediccion = []
     for h in range(horizon):
+        vol_h   = float(pred_q50[h])
+        step_rng = np.random.default_rng(seed + h + 42)
+        daily_ret = step_rng.normal(drift_bias * vol_h, vol_h)
+        precio_est = precio_actual * (1 + daily_ret)
+
+        # Tendencia del día respecto al precio anterior
+        umbral = precio_actual * 0.001
+        if precio_est > precio_actual + umbral:
+            tend_dia = "alcista"
+        elif precio_est < precio_actual - umbral:
+            tend_dia = "bajista"
+        else:
+            tend_dia = "lateral"
+
         prediccion.append({
-            "fecha":     fcast_dates[h].isoformat(),
-            "vol_q10":   round(max(pred_q10[h], 0.001), 5),
-            "vol_q50":   round(max(pred_q50[h], 0.001), 5),
-            "vol_q90":   round(max(pred_q90[h], 0.001), 5),
-            "precio_estimado": round(ultimo_precio * (1 + np.random.default_rng(seed+h).normal(0, pred_q50[h])), 4),
+            "fecha":            fcast_dates[h].isoformat(),
+            "vol_q10":          round(max(pred_q10[h], 0.001), 5),
+            "vol_q50":          round(max(pred_q50[h], 0.001), 5),
+            "vol_q90":          round(max(pred_q90[h], 0.001), 5),
+            "precio_estimado":  round(precio_est, 4),
+            "retorno_dia":      round(daily_ret * 100, 3),
+            "tendencia":        tend_dia,
         })
+        precio_actual = precio_est  # acumulativo
 
     # Nivel de riesgo (0-100) basado en vol q50 relativa a la media histórica
     vol_hist_mean = float(np.mean(hist_vol))
     vol_pred_mean = float(np.mean(pred_q50))
     nivel_riesgo  = min(100, int((vol_pred_mean / (vol_hist_mean + 1e-8)) * 50))
 
+    # Resumen de tendencia 5 días
+    precio_final   = prediccion[-1]["precio_estimado"]
+    rendimiento_5d = round((precio_final / ultimo_precio - 1) * 100, 2)
+    umbral_5d      = ultimo_precio * 0.005
+    if precio_final > ultimo_precio + umbral_5d:
+        tendencia_5d = "alcista"
+    elif precio_final < ultimo_precio - umbral_5d:
+        tendencia_5d = "bajista"
+    else:
+        tendencia_5d = "lateral"
+
+    # Tendencia de volatilidad (sube/baja/estable)
+    if vol_pred_mean > vol_hist_mean * 1.15:
+        tendencia_vol = "creciente"
+    elif vol_pred_mean < vol_hist_mean * 0.85:
+        tendencia_vol = "decreciente"
+    else:
+        tendencia_vol = "estable"
+
     n_anomalias = sum(1 for h in historico if h["anomalia"])
 
     return {
-        "ticker":         ticker,
-        "nombre":         meta["nombre"],
-        "sector":         meta["sector"],
-        "clase":          meta["clase"],
-        "color":          meta["color"],
-        "continuo":       meta.get("continuo", False),
-        "historico":      historico,
-        "prediccion":     prediccion,
-        "nivel_riesgo":   nivel_riesgo,
-        "n_anomalias":    n_anomalias,
-        "vol_media_hist": round(vol_hist_mean, 5),
-        "vol_pred_media": round(vol_pred_mean, 5),
+        "ticker":          ticker,
+        "nombre":          meta["nombre"],
+        "sector":          meta["sector"],
+        "clase":           meta["clase"],
+        "color":           meta["color"],
+        "continuo":        meta.get("continuo", False),
+        "historico":       historico,
+        "prediccion":      prediccion,
+        "nivel_riesgo":    nivel_riesgo,
+        "n_anomalias":     n_anomalias,
+        "vol_media_hist":  round(vol_hist_mean, 5),
+        "vol_pred_media":  round(vol_pred_mean, 5),
+        "rendimiento_5d":  rendimiento_5d,
+        "tendencia_5d":    tendencia_5d,
+        "tendencia_vol":   tendencia_vol,
+        "precio_actual":   round(ultimo_precio, 4),
     }
 
 
@@ -295,6 +346,62 @@ _NOTICIAS = {
         ("Floor price de NFTs en {n} cae un {p:.1f}% en 24h: mercado en corrección",  -0.62),
         ("{n} integra zkRollup: fees caen un {p:.1f}% y velocidad se multiplica",      0.75),
         ("Influencer {n} acusado de pump-and-dump: token pierde {p:.1f}% en minutos",  -0.85),
+    ],
+    "ETF Global": [
+        ("{n} registra entradas de {b:.0f}M$ en una semana: apetito inversor en máximos", 0.85),
+        ("El S&P 500 marca nuevo récord: {n} sube un {p:.1f}% en la sesión",           0.88),
+        ("Rotación sectorial presiona al {n} a pesar del buen dato macro",             -0.35),
+        ("Fed señala pausa en subidas de tipos: {n} rebota un {p:.1f}%",               0.72),
+        ("Datos de empleo en EE.UU. por encima de lo esperado: {n} sube con fuerza",  0.78),
+        ("Tensiones geopolíticas reducen el apetito por riesgo: {n} cede un {p:.1f}%",-0.68),
+        ("BlackRock incrementa peso del {n} en carteras modelo globales",              0.65),
+        ("El {n} acumula {p:.1f}% de rentabilidad en el año, liderando su categoría", 0.80),
+        ("Recesión técnica en Europa pesa sobre el {n} a pesar de la resistencia de EE.UU.", -0.52),
+        ("Morgan Stanley eleva su objetivo para el S&P 500: catalizador para el {n}", 0.70),
+        ("Inflación persiste: mercado descuenta menos recortes de tipos, presión sobre {n}", -0.55),
+        ("{n} supera los {b:.0f}M$ en activos bajo gestión por primera vez",           0.82),
+    ],
+    "ETF Tech": [
+        ("Nvidia bate expectativas con beneficios récord: {n} sube un {p:.1f}%",       0.92),
+        ("Regulación antimonopolio amenaza a las Big Tech: {n} cede posiciones",       -0.65),
+        ("IA generativa impulsa ingresos del sector: {n} marca máximos anuales",       0.88),
+        ("Apple, Microsoft y Alphabet lideran el rebote: {n} avanza un {p:.1f}%",     0.82),
+        ("Corrección en semiconductores arrastra al {n}: caída del {p:.1f}%",         -0.72),
+        ("Meta y Alphabet disparan resultados publicitarios: positivo para el {n}",    0.75),
+        ("Tensiones entre EE.UU. y China por chips afectan al {n}",                   -0.60),
+        ("Inversión en centros de datos de IA supera {b:.0f}M$: beneficia al {n}",    0.85),
+        ("Nasdaq 100 en zona de sobrecompra: analistas sugieren toma de beneficios",   -0.38),
+        ("{n} capta {b:.0f}M$ en entradas netas esta semana, récord mensual",          0.78),
+        ("Valoraciones del sector tech bajo presión con tipos altos prolongados",      -0.55),
+        ("IPO de startup de IA supera expectativas: impulso para el {n}",             0.62),
+    ],
+    "ETF Bonos": [
+        ("Fed mantiene tipos: precio del {n} sube un {p:.1f}%",                        0.72),
+        ("Dato de inflación por encima del consenso: rendimientos suben, {n} cae",    -0.78),
+        ("Demanda récord en subasta del Tesoro de EE.UU.: impulso para el {n}",       0.68),
+        ("Curva de tipos se invierte: {n} beneficiado por huida hacia calidad",        0.60),
+        ("Fed hawkish: mercado descuenta tipos altos más tiempo, {n} bajo presión",   -0.75),
+        ("Crisis bancaria regional: inversores buscan refugio en bonos, {n} sube {p:.1f}%", 0.82),
+        ("Dato de empleo débil aumenta probabilidad de recorte: {n} avanza",           0.70),
+        ("Rebote de la inflación aleja los recortes de tipos: {n} cede un {p:.1f}%",  -0.65),
+        ("Japón ajusta control de curva de tipos: impacto global en bonos, {n} volátil", -0.42),
+        ("Recesión en la Eurozona aumenta flujos hacia bonos seguros: positivo para {n}", 0.65),
+        ("{n} acumula {p:.1f}% en el mes al revalorizarse los bonos del Tesoro",       0.75),
+        ("Déficit fiscal de EE.UU. preocupa: prima de riesgo sube, {n} bajo presión", -0.58),
+    ],
+    "ETF Oro": [
+        ("El {n} escala a máximos históricos ante la incertidumbre geopolítica",       0.90),
+        ("Dólar se fortalece: el {n} pierde un {p:.1f}% al reducirse el atractivo del oro", -0.65),
+        ("Bancos centrales acumulan reservas de oro: flujos positivos para el {n}",   0.78),
+        ("Bajada de tipos en EE.UU.: coste de oportunidad del {n} se reduce, sube",   0.72),
+        ("Estabilidad macro reduce la demanda de refugio: {n} retrocede un {p:.1f}%", -0.50),
+        ("Tensiones en Oriente Medio elevan el precio del oro: {n} sube con fuerza",  0.85),
+        ("Inflación persistente impulsa la demanda de coberturas: {n} al alza",        0.68),
+        ("India y China disparan la demanda física de oro: positivo para el {n}",     0.75),
+        ("Corrección técnica en metales preciosos: {n} cede un {p:.1f}%",            -0.45),
+        ("{n} registra entradas de {b:.0f}M$ en la semana: mayor flujo desde 2020",   0.82),
+        ("Riesgo de recesión global impulsa el oro como activo refugio: {n} sube",    0.70),
+        ("Dólar en máximos de dos años: presión sobre materias primas y el {n}",      -0.60),
     ],
 }
 
