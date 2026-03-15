@@ -28,12 +28,13 @@ from sklearn.preprocessing import StandardScaler
 ARTIFACTS = Path(__file__).parent / "artifacts"
 ARTIFACTS.mkdir(exist_ok=True)
 
+# Tickers reales — se descargan de Yahoo Finance (5 años de datos)
 TICKERS = {
-    "IBEX35": {"nombre": "IBEX 35",        "sector": "Índice",    "precio_base": 10_800.0, "vol_base": 0.012},
-    "SAN":    {"nombre": "Santander",       "sector": "Banca",     "precio_base": 4.20,     "vol_base": 0.018},
-    "ITX":    {"nombre": "Inditex",         "sector": "Retail",    "precio_base": 48.50,    "vol_base": 0.014},
-    "BBVA":   {"nombre": "BBVA",            "sector": "Banca",     "precio_base": 9.80,     "vol_base": 0.017},
-    "TEF":    {"nombre": "Telefónica",      "sector": "Telecom",   "precio_base": 4.10,     "vol_base": 0.016},
+    "IBEX35": {"nombre": "IBEX 35",   "sector": "Índice",  "precio_base": 10_800.0, "vol_base": 0.012, "yf_symbol": "^IBEX"},
+    "SAN":    {"nombre": "Santander", "sector": "Banca",   "precio_base": 4.20,     "vol_base": 0.018, "yf_symbol": "SAN.MC"},
+    "ITX":    {"nombre": "Inditex",   "sector": "Retail",  "precio_base": 48.50,    "vol_base": 0.014, "yf_symbol": "ITX.MC"},
+    "BBVA":   {"nombre": "BBVA",      "sector": "Banca",   "precio_base": 9.80,     "vol_base": 0.017, "yf_symbol": "BBVA.MC"},
+    "TEF":    {"nombre": "Telefónica","sector": "Telecom", "precio_base": 4.10,     "vol_base": 0.016, "yf_symbol": "TEF.MC"},
 }
 
 LOOKBACK  = 30   # días de contexto
@@ -43,22 +44,52 @@ HIDDEN    = 64
 N_HEADS   = 4
 N_LAYERS  = 2
 DROPOUT   = 0.10
-N_DAYS    = 600  # días de entrenamiento
 EPOCHS    = 80
 LR        = 1e-3
 BATCH     = 64
 
-# ── Generación de datos GARCH ─────────────────────────────────────────────────
+# ── Descarga de datos reales (yfinance) ───────────────────────────────────────
+
+def download_real_returns(ticker_id: str, meta: dict) -> tuple[np.ndarray, np.ndarray] | None:
+    """
+    Descarga retornos diarios reales de Yahoo Finance (5 años).
+    Calcula volatilidad realizada como std móvil de retornos.
+    Fuente: https://finance.yahoo.com — acceso público sin API key.
+    """
+    try:
+        import yfinance as yf
+        symbol = meta.get("yf_symbol", ticker_id)
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period="5y", interval="1d", auto_adjust=True)
+        if hist.empty or len(hist) < 100:
+            return None
+        closes = hist["Close"].dropna().values.astype(float)
+        ret = np.diff(np.log(closes))       # log-retornos diarios
+        # Volatilidad realizada: std móvil 10d (anualizada → diaria)
+        vol = np.array([
+            float(np.std(ret[max(0, t-10):t+1])) if t >= 2 else abs(ret[t])
+            for t in range(len(ret))
+        ])
+        # Clip extremos
+        ret = np.clip(ret, -0.15, 0.15)
+        vol = np.clip(vol, 1e-5, 0.15)
+        print(f"  {ticker_id} ({symbol}): {len(ret)} días reales | vol_media={vol.mean():.4f}")
+        return ret, vol
+    except Exception as e:
+        print(f"  {ticker_id}: yfinance error ({e}), usando GARCH sintético")
+        return None
+
+
+# ── Generación de datos GARCH (fallback) ──────────────────────────────────────
 
 def garch_series(n, vol_base, omega=8e-6, alpha=0.12, beta=0.82, seed=0):
-    """Genera serie de retornos con dinámica GARCH(1,1)."""
+    """Genera serie de retornos con dinámica GARCH(1,1) (fallback si yfinance falla)."""
     rng = np.random.default_rng(seed)
     sigma2 = np.zeros(n)
     ret    = np.zeros(n)
     sigma2[0] = vol_base ** 2
     for t in range(1, n):
         sigma2[t] = omega + alpha * ret[t-1]**2 + beta * sigma2[t-1]
-        # Inyectar regímenes de alta volatilidad (~3 veces al año)
         if rng.random() < 0.005:
             sigma2[t] *= rng.uniform(3.0, 6.0)
         ret[t] = math.sqrt(sigma2[t]) * rng.standard_normal()
@@ -169,19 +200,35 @@ def train():
 
     all_X, all_y = [], []
     ticker_stats = {}
+    n_real, n_synthetic = 0, 0
 
     for ticker, meta in TICKERS.items():
-        seed = abs(hash(ticker)) % 1000
-        ret, vol = garch_series(N_DAYS, meta["vol_base"], seed=seed)
-        feat      = build_features(ret, vol, N_DAYS)
-        X, y      = build_dataset(feat, vol)
+        # Intentar datos reales de Yahoo Finance
+        real = download_real_returns(ticker, meta)
+        if real is not None:
+            ret, vol = real
+            n_real += 1
+            data_source = "Yahoo Finance (real)"
+        else:
+            # Fallback a GARCH sintético
+            seed = abs(hash(ticker)) % 1000
+            ret, vol = garch_series(1500, meta["vol_base"], seed=seed)
+            n_synthetic += 1
+            data_source = "GARCH sintético (fallback)"
+
+        feat = build_features(ret, vol, len(ret))
+        X, y = build_dataset(feat, vol)
         all_X.append(X)
         all_y.append(y)
         ticker_stats[ticker] = {
-            "vol_media": float(np.mean(vol)),
-            "vol_max":   float(np.max(vol)),
+            "vol_media":   float(np.mean(vol)),
+            "vol_max":     float(np.max(vol)),
+            "n_dias":      len(ret),
+            "data_source": data_source,
         }
-        print(f"  {ticker}: {len(X)} muestras | vol_media={np.mean(vol):.4f}")
+        print(f"  {ticker}: {len(X)} muestras | vol_media={np.mean(vol):.4f} | {data_source}")
+
+    print(f"\n  Datos reales: {n_real} tickers | Sintéticos: {n_synthetic} tickers")
 
     X_all = np.concatenate(all_X, axis=0)
     y_all = np.concatenate(all_y, axis=0)
@@ -290,12 +337,12 @@ def train():
         "deteccion":       "Anomalía cuando vol_real > q90 del modelo",
         "tickers":         list(TICKERS.keys()),
         "ticker_meta":     TICKERS,
-        "dias_entrenamiento": N_DAYS,
+        "dias_entrenamiento": len(X_all),
         "epochs":          EPOCHS,
         "mae":             round(mae, 6),
         "rmse":            round(rmse, 6),
         "val_loss":        round(best_val, 4),
-        "datos":           "Sintéticos con dinámica GARCH(1,1)",
+        "datos":           f"Yahoo Finance (real): {n_real} tickers | GARCH fallback: {n_synthetic} tickers",
     }
     with open(ARTIFACTS / "metadata.json", "w", encoding="utf-8") as f:
         json.dump(metadata, f, ensure_ascii=False, indent=2)
