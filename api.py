@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI(
     title="ML Volatilidad Anómala — TFT-lite",
     version="1.0",
-    description="Detección de volatilidad anómala en activos financieros mediante Temporal Fusion Transformer + sentimiento FinBERT-inspired.",
+    description="Detección de volatilidad anómala en activos financieros mediante TFT-lite (Temporal Fusion Transformer ligero) + sentimiento heurístico por palabras clave.",
 )
 
 app.add_middleware(

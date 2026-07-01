@@ -19,7 +19,7 @@ Demo en producción: [adrianmoreno-dev.com/demo/volatilidad-anomala](https://adr
 | Calibración q10 | 9.9% (ideal: 10%) |
 | Calibración q50 | 52.9% (ideal: 50%) |
 | Calibración q90 | 91.5% (ideal: 90%) |
-| Datos reales | 100% yfinance (IBEX35, SAN, ITX, BBVA, TEF) |
+| Datos | yfinance real (IBEX35, SAN, ITX, BBVA, TEF); fallback a GARCH(1,1) sintético si la descarga falla |
 
 > **MCC = 0.795** es excelente para detección de anomalías con clases muy desbalanceadas (~10% anómalas). Los intervalos de confianza están muy bien calibrados: cuando el modelo dice q90, realmente se supera en el 91.5% de los casos.
 
