@@ -6,6 +6,34 @@ Demo en producción: [adrianmoreno-dev.com/demo/volatilidad-anomala](https://adr
 
 ---
 
+<!-- LOOP-MAP:START (generado por `php artisan project:loop readme` — no editar a mano) -->
+
+## El bucle que cierra
+
+<p align="center"><img src="https://adrianmoreno-dev.com/bucle/deteccion-volatilidad-anomala.svg" alt="Mapa del bucle de Detección de Volatilidad Anómala" width="900"></p>
+
+**Para** quien vigila el riesgo de una cartera día a día · **Cada día**
+
+| Etapa | Qué pasa | Quién |
+|---|---|---|
+| **1. Disparador** | Cierra el mercado y quiero saber si mañana puede venir un día raro. | persona |
+| **2. Acción** | Predice la volatilidad del día siguiente con una TFT-lite y marca si se sale de lo normal para ese activo. | software |
+| **3. Medición** | La volatilidad prevista con su intervalo y la marca de anomalía, con una falsa alarma cada 47 días normales. | software |
+| **4. Decisión** | Decido si reduzco exposición, cubro o dejo la cartera quieta. | persona |
+
+### Lo que no hace
+
+- No predice el precio ni la dirección: solo cuánto se va a mover.
+- No avisa de todo: se le escapa 1 de cada 5 anomalías reales, y está medido.
+- No opera: marca el día raro, lo que se hace con eso es cosa tuya.
+
+### Por qué está construido así
+
+- **Predicción por cuantiles** en vez de predecir un único valor de volatilidad — Un número solo no dice si el modelo está seguro. Con los cuantiles sale un intervalo, y el ancho del intervalo ya es información.
+- **Publicar la tasa de falsas alarmas** en vez de publicar solo el F1 de anomalías — Lo que decide si un detector es usable es cuántas veces te hace mirar sin motivo: 1 día de cada 47 en este caso.
+
+<!-- LOOP-MAP:END -->
+
 ## Resultados
 
 | Métrica | Valor |
